@@ -3,8 +3,11 @@ package chesscoach;
 import chesscoach.game.Move;
 import chesscoach.game.MoveAnalysis;
 import chesscoach.game.Piece;
+import chesscoach.game.Side;
+import chesscoach.stockfish.StockfishInfo;
 import chesscoach.stockfish.StockfishListener;
 import chesscoach.util.Space;
+import chesscoach.util.Util;
 import chesscoach.view.View;
 
 import java.awt.event.MouseAdapter;
@@ -21,10 +24,13 @@ public class Controller implements StockfishListener {
 
     private Space selectedSpace;
     private Piece selectedPiece;
+    private boolean playersTurn;
 
     public Controller(Model model, View view){
         this.model = model;
         this.view = view;
+
+        playersTurn = model.getGame().getPlayerSide() == Side.LIGHT;
 
         view.getFrame().addWindowListener(new WindowAdapter() {
             @Override
@@ -51,7 +57,7 @@ public class Controller implements StockfishListener {
                 super.mouseReleased(e);
                 if (selectedPiece != null){
                     Space destSpace = view.getBoardPanel().getSpaceAt(e.getX(), e.getY());
-                    move(selectedPiece, selectedSpace, destSpace);
+                    move(selectedPiece, selectedSpace, destSpace, true);
                 }
             }
         });
@@ -69,10 +75,17 @@ public class Controller implements StockfishListener {
                 view.refresh();
             }
         });
+
+        model.getGame().getStockfish().addListener(this);
+
+        if (!playersTurn) {
+            model.getGame().getStockfish().sendMoves();
+            model.getGame().getStockfish().go(3000L);
+        }
     }
 
-    private void move(Piece piece, Space fromSpace, Space toSpace){
-        MoveAnalysis analysis = model.getGame().analyzeMove(selectedPiece, selectedSpace, toSpace);
+    private void move(Piece piece, Space fromSpace, Space toSpace, boolean tellCompGo){
+        MoveAnalysis analysis = model.getGame().analyzeMove(piece, fromSpace, toSpace);
         if (!analysis.isValid()){
             for (String reason: analysis.getInvalidReasons()) {
                 logger.warning("Move Invalid: " + reason);
@@ -90,10 +103,11 @@ public class Controller implements StockfishListener {
         StringBuilder sb = new StringBuilder(fromSpace.toString());
         sb.append(toSpace.toString());
         model.getGame().getStockfish().addMove(sb.toString());
+
+        playersTurn = !playersTurn;
+
         model.getGame().getStockfish().sendMoves();
         model.getGame().getStockfish().go(3000L);
-        //try{Thread.sleep(3000);}catch (Exception e){}
-        //model.getGame().getStockfish().stopSearching();
     }
 
     /**
@@ -103,10 +117,26 @@ public class Controller implements StockfishListener {
     @Override
     public void moveReceived(Move move) {
         String moveString = move.getMove();
+        logger.info("Received move from Stockfish: " + moveString);
+        Space[] moveSpaces = Util.parseMove(moveString);
+        Space fromSpace = moveSpaces[0];
+        Space toSpace = moveSpaces[1];
+        Piece piece = model.getGame().findPieceAt(fromSpace);
+        if (!playersTurn)
+            move(piece, fromSpace, toSpace, false);
+        else {
+            model.getGame().setBestMove(move.getMove());
+            model.getGame().setBestMoveScore(move.getScoreCp());
+        }
 
         if (move.getPonder() != null){
             //model.getGame().getStockfish().ponder(move.getPonder());
         }
+    }
+
+    @Override
+    public void infoReceived(StockfishInfo info) {
+
     }
 
     @Override

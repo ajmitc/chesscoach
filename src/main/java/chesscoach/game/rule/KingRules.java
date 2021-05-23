@@ -31,6 +31,7 @@ public class KingRules extends Rules{
         // down-right
         validDest.addAll(getPath(fromSpace, fromSpace.pan(-1, 1), pieces));
 
+        // TODO Allow castling
 
         // TODO Cannot put self in danger!
 

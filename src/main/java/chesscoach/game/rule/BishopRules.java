@@ -11,18 +11,17 @@ public class BishopRules extends Rules{
     @Override
     public List<Space> getValidMoves(Piece piece, Space fromSpace, List<Piece> pieces) {
         List<Space> validDest = new ArrayList<>();
-        // upper-left diagonal
-        int min = Math.min(fromSpace.rank, fromSpace.file);
-        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank + min, fromSpace.file - min), pieces));
-        // upper-right diagonal
-        min = Math.min(fromSpace.rank, 8 - fromSpace.file);
-        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank + min, fromSpace.file + min), pieces));
-        // lower-left diagonal
-        min = Math.min(8 - fromSpace.rank, fromSpace.file);
-        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank - min, fromSpace.file - min), pieces));
-        // lower-right diagonal
-        min = Math.min(8 - fromSpace.rank, 8 - fromSpace.file);
-        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank - min, fromSpace.file + min), pieces));
+        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank + 7, fromSpace.file + 7), pieces));
+        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank - 7, fromSpace.file - 7), pieces));
+        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank + 7, fromSpace.file - 7), pieces));
+        validDest.addAll(getPath(fromSpace, new Space(fromSpace.rank - 7, fromSpace.file + 7), pieces));
         return validDest;
+    }
+
+    private int ceiling(int val){
+        return Math.min(val, 7);
+    }
+    private int floor(int val){
+        return Math.max(val, 0);
     }
 }

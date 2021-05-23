@@ -15,9 +15,13 @@ public class Game {
 
     private Map<Side, Integer> score = new HashMap<>();
 
-    private Side playerSide = Side.LIGHT;
+    private Side playerSide = Side.DARK;
 
     private Stockfish stockfish;
+
+    // Best move as returned by Stockfish
+    private String bestMove;
+    private int bestMoveScore;
 
     public Game(){
         pieces.add(new Piece(PieceType.ROOK, Side.LIGHT, 0, 0));
@@ -25,8 +29,8 @@ public class Game {
         pieces.add(new Piece(PieceType.BISHOP, Side.LIGHT, 0, 2));
         pieces.add(new Piece(PieceType.QUEEN, Side.LIGHT, 0, 3));
         pieces.add(new Piece(PieceType.KING, Side.LIGHT, 0, 4));
-        pieces.add(new Piece(PieceType.KNIGHT, Side.LIGHT, 0, 5));
-        pieces.add(new Piece(PieceType.BISHOP, Side.LIGHT, 0, 6));
+        pieces.add(new Piece(PieceType.BISHOP, Side.LIGHT, 0, 5));
+        pieces.add(new Piece(PieceType.KNIGHT, Side.LIGHT, 0, 6));
         pieces.add(new Piece(PieceType.ROOK, Side.LIGHT, 0, 7));
         for (int i = 0; i < 8; ++i)
             pieces.add(new Piece(PieceType.PAWN, Side.LIGHT, 1, i));
@@ -104,5 +108,21 @@ public class Game {
 
     public Stockfish getStockfish() {
         return stockfish;
+    }
+
+    public void setBestMove(String bestMove) {
+        this.bestMove = bestMove;
+    }
+
+    public String getBestMove() {
+        return bestMove;
+    }
+
+    public int getBestMoveScore() {
+        return bestMoveScore;
+    }
+
+    public void setBestMoveScore(int bestMoveScore) {
+        this.bestMoveScore = bestMoveScore;
     }
 }

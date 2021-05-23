@@ -3,10 +3,7 @@ package chesscoach.stockfish;
 import chesscoach.game.Move;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -26,6 +23,11 @@ public class Stockfish {
     private List<String> moves = new ArrayList<>();
 
     private ReaderThread readerThread;
+
+    private Timer moveTimer;
+    private boolean receivedMove;
+
+    private StockfishInfo latestInfo;
 
     public Stockfish(){
 
@@ -116,16 +118,25 @@ public class Stockfish {
             handleUciOk();
         }
         else if (line.startsWith("bestmove")){
+            logger.info(line);
+            receivedMove = true;
             String[] parts = line.split(" ");
             String move = parts[1];
             String ponder = null;
             if (parts.length >= 4)
                 ponder = parts[3];
             Move move1 = new Move(move, ponder);
+            if (latestInfo != null) {
+                move1.setScoreCp(latestInfo.getScoreCentipawns());
+                move1.setMateInMoves(latestInfo.getMateInMoves());
+            }
             sendToListeners(move1);
         }
         else if (line.startsWith("info ")){
             logger.info(line);
+            StockfishInfo info = new StockfishInfo(line);
+            latestInfo = info;
+            sendToListeners(info);
         }
         else if (line.equals("readyok")){
             sendReadyToListeners();
@@ -174,6 +185,16 @@ public class Stockfish {
              */
         }
         send(sb.toString());
+
+        receivedMove = false;
+        moveTimer = new Timer();
+        moveTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (!receivedMove)
+                    stopSearching();
+            }
+        }, 0, maxMilliToSearch + 500);
     }
 
     /**
@@ -215,6 +236,12 @@ public class Stockfish {
     private void sendToListeners(Move move){
         for (StockfishListener listener: listeners){
             listener.moveReceived(move);
+        }
+    }
+
+    private void sendToListeners(StockfishInfo info){
+        for (StockfishListener listener: listeners){
+            listener.infoReceived(info);
         }
     }
 
