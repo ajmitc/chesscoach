@@ -15,7 +15,7 @@ public class Game {
 
     private Map<Side, Integer> score = new HashMap<>();
 
-    private Side playerSide = Side.DARK;
+    private Side playerSide = Side.values()[Util.getRandInt(0, 2)];
 
     private Stockfish stockfish;
 
@@ -58,7 +58,7 @@ public class Game {
     }
 
     public Piece findPieceAt(int rank, int file){
-        Optional<Piece> opt = pieces.stream().filter(piece -> piece.getRank() == rank && piece.getFile() == file).findFirst();
+        Optional<Piece> opt = pieces.stream().filter(piece -> piece.getRank() == rank && piece.getFile() == file && !piece.isCaptured()).findFirst();
         return opt.isPresent()? opt.get(): null;
     }
 

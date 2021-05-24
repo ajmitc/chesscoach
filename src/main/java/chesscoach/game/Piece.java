@@ -10,6 +10,7 @@ public class Piece {
     private int startingRank;
     private int startingFile;
     private boolean captured = false;
+    private boolean moved = false;
 
     public Piece(PieceType type, Side side){
         this.type = type;
@@ -28,6 +29,7 @@ public class Piece {
     public void moveTo(int rank, int file){
         setRank(rank);
         setFile(file);
+        moved = true;
     }
 
     public PieceType getType() {
@@ -68,6 +70,14 @@ public class Piece {
 
     public int getStartingRank() {
         return startingRank;
+    }
+
+    public boolean isMoved() {
+        return moved;
+    }
+
+    public void setMoved(boolean moved) {
+        this.moved = moved;
     }
 
     public String toString(){

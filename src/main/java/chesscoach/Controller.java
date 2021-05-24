@@ -1,19 +1,13 @@
 package chesscoach;
 
-import chesscoach.game.Move;
-import chesscoach.game.MoveAnalysis;
-import chesscoach.game.Piece;
-import chesscoach.game.Side;
+import chesscoach.game.*;
 import chesscoach.stockfish.StockfishInfo;
 import chesscoach.stockfish.StockfishListener;
 import chesscoach.util.Space;
 import chesscoach.util.Util;
 import chesscoach.view.View;
 
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.util.logging.Logger;
 
 public class Controller implements StockfishListener {
@@ -39,7 +33,9 @@ public class Controller implements StockfishListener {
                 try {
                     model.getGame().getStockfish().stop();
                 }
-                catch (Exception ex){}
+                catch (Exception ex){
+                    logger.warning("Failed to stop stockfish: " + ex);
+                }
             }
         });
 
@@ -48,8 +44,12 @@ public class Controller implements StockfishListener {
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
                 selectedSpace = view.getBoardPanel().getSpaceAt(e.getX(), e.getY());
-                if (selectedSpace != null)
+                if (selectedSpace != null) {
                     selectedPiece = model.getGame().findPieceAt(selectedSpace);
+                    if (selectedPiece != null){
+                        // TODO Show possible movements
+                    }
+                }
             }
 
             @Override
@@ -76,6 +76,13 @@ public class Controller implements StockfishListener {
             }
         });
 
+        view.getHelpPanel().getBtnShowHelp().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                view.getHelpPanel().showHelp();
+            }
+        });
+
         model.getGame().getStockfish().addListener(this);
 
         if (!playersTurn) {
@@ -85,6 +92,8 @@ public class Controller implements StockfishListener {
     }
 
     private void move(Piece piece, Space fromSpace, Space toSpace, boolean tellCompGo){
+        view.getHelpPanel().clearHelp();
+
         MoveAnalysis analysis = model.getGame().analyzeMove(piece, fromSpace, toSpace);
         if (!analysis.isValid()){
             for (String reason: analysis.getInvalidReasons()) {
@@ -95,9 +104,41 @@ public class Controller implements StockfishListener {
         Piece capturedPiece = model.getGame().findPieceAt(toSpace);
         if (capturedPiece != null) {
             capturedPiece.setCaptured(true);
+            capturedPiece.setRank(-1);
+            capturedPiece.setFile(-1);
             model.getGame().updateScoreWithCapture(piece.getSide(), capturedPiece.getType().getPower());
         }
         piece.moveTo(toSpace.rank, toSpace.file);
+        view.getBoardPanel().setPreviousMove(fromSpace, toSpace);
+
+        // Check for castling
+        if (piece.getType() == PieceType.KING) {
+            int diff = toSpace.getFile() - fromSpace.getFile();
+            if (Math.abs(diff) == 2){
+                // Move rook next to king
+                if (piece.getSide() == Side.LIGHT) {
+                    if (diff > 0) {
+                        Piece rook = model.getGame().findPieceAt(0, 7);
+                        rook.moveTo(0, 5);
+                    } else {
+                        // Move queen-side
+                        Piece rook = model.getGame().findPieceAt(0, 0);
+                        rook.moveTo(0, 2);
+                    }
+                }
+                else {
+                    if (diff > 0) {
+                        // Move queen side
+                        Piece rook = model.getGame().findPieceAt(7, 7);
+                        rook.moveTo(7, 5);
+                    } else {
+                        // Move king -side
+                        Piece rook = model.getGame().findPieceAt(7, 0);
+                        rook.moveTo(7, 2);
+                    }
+                }
+            }
+        }
         view.refresh();
 
         StringBuilder sb = new StringBuilder(fromSpace.toString());

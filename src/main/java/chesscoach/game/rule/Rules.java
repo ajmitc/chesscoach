@@ -37,12 +37,10 @@ public abstract class Rules {
             // If we're off the board, stop
             if (cx < 0 || cx >= 8 || cy < 0 || cy >= 8)
                 break;
+            spaces.add(new Space(cy, cx));
             Piece piece = getPieceAt(cy, cx, pieces);
-            if (piece == null){
-                spaces.add(new Space(cy, cx));
-            }
-            else {
-                logger.warning("Found piece " + piece);
+            if (piece != null && !piece.isCaptured()){
+                //logger.warning("Found piece " + piece);
                 break;
             }
         }

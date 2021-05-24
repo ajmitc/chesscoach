@@ -7,6 +7,7 @@ import chesscoach.util.Space;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 public class BoardPanel extends JPanel {
     public static final int BOARD_WIDTH = 8;
@@ -16,6 +17,7 @@ public class BoardPanel extends JPanel {
     public static final Color BORDER_COLOR = Color.BLACK;
     public static final Color PIECE_FONT_COLOR = Color.BLACK;
     public static final Color HIGHLIGHT_COLOR = Color.YELLOW;
+    public static final Color PREVIOUS_MOVE_COLOR = Color.CYAN; //new Color(Color.CYAN.getRed(), Color.CYAN.getGreen(), Color.CYAN.getBlue(), 127);
     public static final int BOARD_XOFFSET = 15;
     public static final int BOARD_YOFFSET = 25;
     public static final int RANK_FILE_FONT_SIZE = 10;
@@ -36,6 +38,9 @@ public class BoardPanel extends JPanel {
 
     private Integer hoverRank;
     private Integer hoverFile;
+
+    private Space previousMoveFromSpace;
+    private Space previousMoveToSpace;
 
     public BoardPanel(Model model, View view){
         this.model = model;
@@ -77,10 +82,6 @@ public class BoardPanel extends JPanel {
             }
         }
 
-        // Draw border
-        graphics.setColor(BORDER_COLOR);
-        graphics.drawRect(BOARD_XOFFSET, BOARD_YOFFSET, SPACE_SIZE * BOARD_WIDTH, SPACE_SIZE * BOARD_WIDTH);
-
         // Draw file labels
         graphics.setColor(Color.BLACK);
         graphics.setFont(RANK_FILE_FONT);
@@ -99,6 +100,25 @@ public class BoardPanel extends JPanel {
             int y = BOARD_YOFFSET + (SPACE_SIZE * BOARD_WIDTH) - (i * SPACE_SIZE) - 4;
             graphics.drawString("" + rankSeq[i], x, y);
             graphics.drawString("" + rankSeq[i], x + ((BOARD_WIDTH + 1) * SPACE_SIZE) - 2, y);
+        }
+
+        // Draw previous move spaces
+        if (previousMoveFromSpace != null){
+            int file = model.getGame().getPlayerSide() == Side.LIGHT? previousMoveFromSpace.file: 7 - previousMoveFromSpace.file;
+            int rank = model.getGame().getPlayerSide() == Side.LIGHT? previousMoveFromSpace.rank: 7 - previousMoveFromSpace.rank;
+            int x = BOARD_XOFFSET + (file * SPACE_SIZE);
+            int y = BOARD_YOFFSET + ((rank + 1) * -SPACE_SIZE) + (BOARD_WIDTH * SPACE_SIZE);
+            graphics.setColor(PREVIOUS_MOVE_COLOR);
+            graphics.fillRect(x, y, SPACE_SIZE, SPACE_SIZE);
+        }
+
+        if (previousMoveToSpace != null){
+            int file = model.getGame().getPlayerSide() == Side.LIGHT? previousMoveToSpace.file: 7 - previousMoveToSpace.file;
+            int rank = model.getGame().getPlayerSide() == Side.LIGHT? previousMoveToSpace.rank: 7 - previousMoveToSpace.rank;
+            int x = BOARD_XOFFSET + (file * SPACE_SIZE);
+            int y = BOARD_YOFFSET + ((rank + 1) * -SPACE_SIZE) + (BOARD_WIDTH * SPACE_SIZE);
+            graphics.setColor(PREVIOUS_MOVE_COLOR);
+            graphics.fillRect(x, y, SPACE_SIZE, SPACE_SIZE);
         }
 
         // Draw hover space
@@ -138,18 +158,19 @@ public class BoardPanel extends JPanel {
             }
         }
 
-        // Draw best move & score
-        graphics.setColor(Color.BLACK);
-        graphics.drawString("Best Move: " + model.getGame().getBestMove(), BEST_MOVE_XOFFSET, BEST_MOVE_YOFFSET);
-        graphics.drawString("Score: " + model.getGame().getBestMoveScore(), BEST_SCORE_XOFFSET, BEST_SCORE_YOFFSET);
+        // Draw border
+        graphics.setColor(BORDER_COLOR);
+        graphics.drawRect(BOARD_XOFFSET, BOARD_YOFFSET, SPACE_SIZE * BOARD_WIDTH, SPACE_SIZE * BOARD_WIDTH);
     }
 
     private void drawPieceAt(Graphics graphics, Piece piece, int x, int y){
-        graphics.setColor(piece.getSide() == Side.LIGHT? Color.WHITE: Color.BLACK);
-        graphics.fillOval(x + 2, y + 2, SPACE_SIZE - 4, SPACE_SIZE - 4);
-        graphics.setColor(piece.getSide() == Side.LIGHT? Color.BLACK: Color.WHITE);
-        graphics.drawOval(x + 2, y + 2, SPACE_SIZE - 4, SPACE_SIZE - 4);
-        graphics.drawString(piece.getType().getCode(), x + 7, y + SPACE_SIZE - 5);
+        BufferedImage image = PieceImageUtil.get(piece.getType(), piece.getSide(), SPACE_SIZE - 4);
+        graphics.drawImage(image, x + 2, y + 2, null);
+//        graphics.setColor(piece.getSide() == Side.LIGHT? Color.WHITE: Color.BLACK);
+//        graphics.fillOval(x + 2, y + 2, SPACE_SIZE - 4, SPACE_SIZE - 4);
+//        graphics.setColor(piece.getSide() == Side.LIGHT? Color.BLACK: Color.WHITE);
+//        graphics.drawOval(x + 2, y + 2, SPACE_SIZE - 4, SPACE_SIZE - 4);
+//        graphics.drawString(piece.getType().getCode(), x + 7, y + SPACE_SIZE - 5);
     }
 
     public void refresh(){
@@ -166,5 +187,10 @@ public class BoardPanel extends JPanel {
             hoverFile = null;
             hoverRank = null;
         }
+    }
+
+    public void setPreviousMove(Space fromSpace, Space toSpace) {
+        this.previousMoveFromSpace = fromSpace;
+        this.previousMoveToSpace   = toSpace;
     }
 }
